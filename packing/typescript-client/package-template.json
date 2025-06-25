@@ -1,0 +1,12 @@
+{
+  "name": "@mi.service.testengine.typescript.httpclient",
+  "version": "<BUILD_VERSION>",
+  "description": "Provides HTTP client for Test engine",
+  "main": "external.ts",
+  "author": {
+    "name": "MP"
+  },
+  "files": [
+    "external.ts"
+  ]
+}

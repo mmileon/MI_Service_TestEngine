@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ProjectId>MI.Service.TestEngine.Domain</ProjectId>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>$(ProjectId)</RootNamespace>
+        <Version>1.0.0.0</Version>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <FileVersion>1.0.0.0</FileVersion>
+        <Authors>MAHFUZUL</Authors>
+        <IsPackable>True</IsPackable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(ProjectId).xml</DocumentationFile>
+        <CodeAnalysisRuleSetLocation>../../analysis</CodeAnalysisRuleSetLocation>
+        <CodeAnalysisRuleSet>$(CodeAnalysisRuleSetLocation)/AnalysisRules.ruleset</CodeAnalysisRuleSet>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.0.1" />
+        <PackageReference Include="MI.Service.Shared" Version="10.3.0.16" />
+    </ItemGroup>
+
+</Project>

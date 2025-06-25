@@ -1,0 +1,129 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <ProjectId>MI.Service.TestEngine</ProjectId>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>$(ProjectId)</RootNamespace>
+        <Version>1.0.0.0</Version>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <FileVersion>1.0.0.0</FileVersion>
+        <Authors>MAHFUZUL</Authors>
+        <IsPackable>True</IsPackable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(ProjectId).xml</DocumentationFile>
+        <CodeAnalysisRuleSetLocation>../../analysis</CodeAnalysisRuleSetLocation>
+        <CodeAnalysisRuleSet>$(CodeAnalysisRuleSetLocation)/AnalysisRules.ruleset</CodeAnalysisRuleSet>
+        <UserSecretsId>f24551b8-f18a-4a2f-9731-f5681045c560</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <DockerfileContext>..\..</DockerfileContext>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AspNetCore.HealthChecks.MongoDb" Version="8.0.1" />
+        <PackageReference Include="GlobalExceptionHandler.ContentNegotiation.Mvc" Version="2.0.0" />
+        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.7" />
+        <PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="1.4.0" />
+        <PackageReference Include="NSwag.MSBuild" Version="14.0.8">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Npgsql.OpenTelemetry" Version="8.0.3" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.0.0-beta.12" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.9.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.9.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.0.0-rc9.14" />
+        <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.6.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\MI.Service.TestEngine.Business\MI.Service.TestEngine.Business.csproj" />
+        <ProjectReference Include="..\MI.Service.TestEngine.Infrastructure.Persistence\MI.Service.TestEngine.Infrastructure.Persistence.csproj" />
+        <ProjectReference Include="..\MI.Service.TestEngine.Shared\MI.Service.TestEngine.Shared.csproj" />
+        <ProjectReference Include="..\MI.Service.TestEngine.Infrastructure.Persistence.PostgreSQL\MI.Service.TestEngine.Infrastructure.Persistence.PostgreSQL.csproj" />
+        <ProjectReference Include="..\MI.Service.TestEngine.Infrastructure.Persistence.SqlServer\MI.Service.TestEngine.Infrastructure.Persistence.MSSQL.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Update="appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="MultiTenancy\" />
+      <Folder Include="Properties\PublishProfiles\" />
+      <Folder Include="translation-export-seed\" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <SwaggerFolder>swagger/</SwaggerFolder>
+        <NSwagConfigurationLocation>../../nswag/</NSwagConfigurationLocation>
+        <NSwagDependsOn>GenerateTypescriptClient;GenerateCSharpClient</NSwagDependsOn>
+        <TypeScriptClientDestinationFolders>../../packing/typescript-client</TypeScriptClientDestinationFolders>
+        <CSharpClientDestinationFolder>../MI.Service.TestEngine.HttpClient/</CSharpClientDestinationFolder>
+    </PropertyGroup>
+
+    <Target Name="NSwag" AfterTargets="Build" DependsOnTargets="$(NSwagDependsOn)">
+    </Target>
+
+    <Target Name="GenerateSwaggerJson">
+        <Message Text="Generating Swagger JSON files from $(OutDir)$(ProjectId).dll to $(OutDir)$(SwaggerFolder)" Importance="High" />
+        <RemoveDir Directories="$(OutDir)$(SwaggerFolder)" />
+        <Exec Command="dotnet $(OutDir)$(ProjectId).dll swaggergen --output $(OutDir)$(SwaggerFolder) --group internal --environment swagger" />
+    </Target>
+
+    <Target Name="GenerateTypescriptClient" DependsOnTargets="GenerateSwaggerJson">
+        <PropertyGroup>
+            <TypescriptNSwagConfigurationName>TypeScriptClient.nswag</TypescriptNSwagConfigurationName>
+            <TypescriptNSwagConfigurationSource>$(NSwagConfigurationLocation)$(TypescriptNSwagConfigurationName)</TypescriptNSwagConfigurationSource>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <TypescriptSwaggerDocuments Include="$(OutDir)$(SwaggerFolder)internal.json" />
+            <TypescriptGenerateCommands Include="%(TypescriptSwaggerDocuments.Identity)">
+                <Command>$(NSwagExe_Net80) run $(OutDir)$(SwaggerFolder)$(TypescriptNSwagConfigurationName) /variables:input=%(Filename)%(Extension),output=%(Filename).ts</Command>
+            </TypescriptGenerateCommands>
+        </ItemGroup>
+
+        <Message Text="Swagger JSON files:" Importance="High" />
+        <Message Text="%(TypescriptSwaggerDocuments.FullPath)" Importance="High" />
+
+        <Message Text="Copying $(TypescriptNSwagConfigurationSource) to $(OutDir)$(SwaggerFolder)" Importance="High" />
+        <Copy SourceFiles="$(TypescriptNSwagConfigurationSource)" DestinationFolder="$(OutDir)$(SwaggerFolder)" />
+
+        <Exec Command="%(TypescriptGenerateCommands.Command)" />
+
+        <Message Text="Copying @(TypescriptSwaggerDocuments->'$(OutDir)$(SwaggerFolder)%(Filename).ts') to $(TypeScriptClientDestinationFolders)" Importance="High" />
+        <Copy SourceFiles="@(TypescriptSwaggerDocuments->'$(OutDir)$(SwaggerFolder)%(Filename).ts')" DestinationFolder="$(TypeScriptClientDestinationFolders)" />
+    </Target>
+
+    <Target Name="GenerateCSharpClient" DependsOnTargets="GenerateSwaggerJson">
+        <PropertyGroup>
+            <CSharpNSwagConfigurationName>CSharpClient.nswag</CSharpNSwagConfigurationName>
+            <CSharpNSwagConfigurationSource>$(NSwagConfigurationLocation)$(CSharpNSwagConfigurationName)</CSharpNSwagConfigurationSource>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <CSharpSwaggerDocuments Include="$(OutDir)$(SwaggerFolder)internal.json" />
+            <CSharpGenerateCommands Include="%(CSharpSwaggerDocuments.Identity)">
+                <Command>$(NSwagExe_Net80) run $(OutDir)$(SwaggerFolder)$(CSharpNSwagConfigurationName) /variables:input=%(Filename)%(Extension),output=%(Filename).cs</Command>
+            </CSharpGenerateCommands>
+        </ItemGroup>
+
+        <Message Text="Swagger JSON files:" Importance="High" />
+        <Message Text="%(CSharpSwaggerDocuments.FullPath)" Importance="High" />
+
+        <Message Text="Copying $(CSharpNSwagConfigurationSource) to $(OutDir)$(SwaggerFolder)" Importance="High" />
+        <Copy SourceFiles="$(CSharpNSwagConfigurationSource)" DestinationFolder="$(OutDir)$(SwaggerFolder)" />
+
+        <Exec Command="%(CSharpGenerateCommands.Command)" />
+
+        <Message Text="Copying @(CSharpSwaggerDocuments->'$(OutDir)$(SwaggerFolder)%(Filename).cs') to $(CSharpClientDestinationFolder)" Importance="High" />
+        <Copy SourceFiles="@(CSharpSwaggerDocuments->'$(OutDir)$(SwaggerFolder)%(Filename).cs')" DestinationFolder="$(CSharpClientDestinationFolder)" />
+    </Target>
+</Project>

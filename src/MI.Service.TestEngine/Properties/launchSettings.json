@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "MI.Service.TestEngine": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "TENANT_ID_LONG": "localhost",
+        "ACCOUNT_DELIMITER": "-"
+      },
+      "applicationUrl": "https://localhost:44355;http://localhost:8055",
+      "launchBrowser": true,
+      "launchUrl": "https://localhost:44355/swagger",
+      "dotnetRunMessages": true
+    }
+  }
+}

@@ -1,0 +1,45 @@
+variables:
+  SCRIPTS_REPO: https://oauth2:$GITLAB_TOKEN_FOR_CI@gitlab.ims.io/build-scripts
+  COVERAGE_TEST_EXCLUDE_PATTERN: "[*]*.Migrations.*"
+  DOCKER_REPO: "Test-engine-service"
+  HTTP_CLIENT_SOLUTION: "MI.Service.TestEngine.HttpClient.sln"
+  MAIN_PROJECT_NAME: "MI.Service.TestEngine"
+  MAIN_SOLUTION: "MI.Service.TestEngine.sln"
+  TEST_SOLUTION: "MI.Service.TestEngine.sln"
+  POD_NAME: "Test-engine-service"
+  PROJECT_KEY: "Test-engine-service"
+  DESTINATION_PLATFORM: net6-autoscale
+
+before_script:
+  - export SCRIPTS_DIR=$(mktemp -d)
+  - export BUILD_SCRIPTS=$SCRIPTS_DIR/scripts/build-scripts
+  - export DOCKER_REGISTRY=$MI_DOCKER_REGISTRY
+  - git clone -b "$DESTINATION_PLATFORM" -q --depth 1 "$SCRIPTS_REPO" "$SCRIPTS_DIR"
+  - cp $BUILD_SCRIPTS/tag.sh tag.sh && chmod +x tag.sh
+  - cp $BUILD_SCRIPTS/pack.sh pack.sh && chmod +x pack.sh
+  - cp $BUILD_SCRIPTS/test.sh test.sh && chmod +x test.sh
+  - cp $BUILD_SCRIPTS/build.sh build.sh && chmod +x build.sh
+
+include:
+  - project: build-scripts
+    ref: net6-autoscale
+    file: /scripts/ci-templates/.build-step.yml
+  - project: build-scripts
+    ref: net6-autoscale
+    file: /scripts/ci-templates/.tests-execution-step.yml
+  - project: build-scripts
+    ref: net6-autoscale
+    file: /scripts/ci-templates/.deploy-step.yml
+  - project: build-scripts
+    ref: net6-autoscale
+    file: /scripts/ci-templates/.pack-step.yml
+  - project: build-scripts
+    ref: net6-autoscale
+    file: /scripts/ci-templates/.check-gitlab-approve-count.yml
+
+stages:
+  - build
+  - deploy
+  - test
+  - pack
+  - merge-votes
